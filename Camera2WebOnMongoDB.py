@@ -29,7 +29,7 @@ cam1Str = "rtsp://admin:passwd@192.168.10.118:554/cam/realmonitor?channel=1&subt
 cam1Base64Str="null"
 ## a string that store individual info getting from MsSQL database
 insertStr="null"
-
+ 
 ## a function that capture a frame coming from local IP Camera and convert it to base64 code and assign it on cam1Base64Str
 def getBase64FrameFromCamera(connectionString):
     # Use the next line if your camera has a username and password
