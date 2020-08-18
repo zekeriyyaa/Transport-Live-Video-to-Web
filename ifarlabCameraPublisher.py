@@ -1,7 +1,10 @@
-"""Access IP Camera in Python OpenCV"""
 """
+## Access IP Camera in Python OpenCV
+
 contact: zekeriyyademirci61@gmail.com
+
 """
+
 import cv2
 import base64
 import pyodbc
@@ -11,15 +14,14 @@ import threading
 
 ### MsSQL Server Connection
 driver="SQL Server"
-server="LABSERVER"
-db="dbAkilliFabrikaa"
-user="ifarlabCloud"
-password="ifarlab1."
+server="serverName"
+db="dbname"
+user="username"
+password="passwd"
 
-cam1Str = "rtsp://admin:ifarlab1@192.168.8.118:554/cam/realmonitor?channel=1&subtype=0"
-cam2Str = "rtsp://admin:ifarlab1@192.168.8.119:554/cam/realmonitor?channel=1&subtype=0"
+cam1Str = "rtsp://admin:passwd@192.168.10.118:554/cam/realmonitor?channel=1&subtype=0"
 
-cam1Base64Str,cam2Base64Str,insertStr="null","null","null"
+cam1Base64Str,insertStr="null","null"
 
 def getBase64FrameFromCamera(connectionString,id):
     # Use the next line if your camera has a username and password
@@ -30,18 +32,15 @@ def getBase64FrameFromCamera(connectionString,id):
     retval, buffer = cv2.imencode('.jpg', image)
     jpg_base64 = base64.b64encode(buffer)
 
-    global cam1Base64Str,cam2Base64Str
+    global cam1Base64Str
 
-    if(id==1):
-        cam1Base64Str=jpg_base64.decode('ascii')
-    else:
-        cam2Base64Str=jpg_base64.decode('ascii')
+    cam1Base64Str=jpg_base64.decode('ascii')
 
     streamCam.release()
 
 
 def getStatusDataFromMsSQL(cursor):
-    cursor.execute('select * from dbAkilliFabrikaa.dbo.fn_LabStatus ()')
+    cursor.execute('select * from Status')
     for row in cursor:
         str=row[1].replace("\\","")
         strArr=str.split(",")
@@ -89,40 +88,28 @@ if __name__ == "__main__":
     cursor = conn.cursor()
 
     ### Mongo & Cloud Connection
-    cloudClient = pymongo.MongoClient("mongodb://178.157.15.103", username='ifaruser', password='ifar1453usr',
-                                      authSource='ifarlab')
-    mydbCloud = cloudClient["ifarlab"]
-    cloudStatus = mydbCloud["ifarlabCloud"]
+    cloudClient = pymongo.MongoClient("mongodb://IPADDRESS", username='USERNAME', password='PASSWORD',
+                                      authSource='XXX')
+    mydbCloud = cloudClient["dbName"]
+    cloudStatus = mydbCloud["CollectionName"]
 
-    ### Mongo & Local Connection
-    localClient = pymongo.MongoClient("mongodb://192.168.8.155")
-    mydbCloud = localClient["ifarlab"]
-    localStatus = mydbCloud["Status"]
-
-    print("started")
 
     while (1):
         # creating thread
         t1 = threading.Thread(target=getBase64FrameFromCamera, args=(cam1Str, 1))
-        t2 = threading.Thread(target=getBase64FrameFromCamera, args=(cam2Str, 2))
-        t3 = threading.Thread(target=getStatusDataFromMsSQL, args=(cursor,))
+        t2 = threading.Thread(target=getStatusDataFromMsSQL, args=(cursor,))
 
         # starting thread 1
         t1.start()
         # starting thread 2
         t2.start()
-        # starting thread 3
-        t3.start()
 
         # wait until thread 1 is completely executed
         t1.join()
         # wait until thread 2 is completely executed
         t2.join()
-        # wait until thread 3 is completely executed
-        t3.join()
 
         insertStr["Cam1Base64Code"]=cam1Base64Str
-        insertStr["Cam2Base64Code"]=cam2Base64Str
 
         # all threads completely executed
 
